@@ -1,0 +1,9 @@
+{
+  "hotkey": "CommandOrControl+Shift+T",
+  "deeplApiKey": "",
+  "ocrLang": "jpn+eng",
+  "targetLang": "JA",
+  "sourceLang": "EN",
+  "saveHistory": true,
+  "maxHistoryItems": 100
+}

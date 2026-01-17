@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+  <title>範囲選択</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+      cursor: crosshair;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .selection-box {
+      position: fixed;
+      border: 2px solid #4a90d9;
+      background: rgba(74, 144, 217, 0.1);
+      pointer-events: none;
+      display: none;
+    }
+
+    .selection-info {
+      position: fixed;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      pointer-events: none;
+      display: none;
+    }
+
+    .instructions {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      text-align: center;
+      z-index: 1000;
+    }
+
+    .instructions kbd {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin: 0 2px;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 2000;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #4a90d9;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-text {
+      color: white;
+      margin-top: 16px;
+      font-size: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+  <div class="selection-box" id="selection-box"></div>
+  <div class="selection-info" id="selection-info"></div>
+  <div class="instructions">
+    ドラッグで翻訳したい範囲を選択 | <kbd>Esc</kbd> でキャンセル
+  </div>
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-text">処理中...</div>
+  </div>
+
+  <script>
+    const selectionBox = document.getElementById('selection-box');
+    const selectionInfo = document.getElementById('selection-info');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingText = document.getElementById('loading-text');
+
+    let isSelecting = false;
+    let startX = 0;
+    let startY = 0;
+
+    // マウスダウンで選択開始
+    document.addEventListener('mousedown', (e) => {
+      if (loadingOverlay.classList.contains('active')) return;
+
+      isSelecting = true;
+      startX = e.clientX;
+      startY = e.clientY;
+
+      selectionBox.style.left = startX + 'px';
+      selectionBox.style.top = startY + 'px';
+      selectionBox.style.width = '0px';
+      selectionBox.style.height = '0px';
+      selectionBox.style.display = 'block';
+      selectionInfo.style.display = 'block';
+    });
+
+    // マウス移動で選択範囲更新
+    document.addEventListener('mousemove', (e) => {
+      if (!isSelecting) return;
+
+      const currentX = e.clientX;
+      const currentY = e.clientY;
+
+      const left = Math.min(startX, currentX);
+      const top = Math.min(startY, currentY);
+      const width = Math.abs(currentX - startX);
+      const height = Math.abs(currentY - startY);
+
+      selectionBox.style.left = left + 'px';
+      selectionBox.style.top = top + 'px';
+      selectionBox.style.width = width + 'px';
+      selectionBox.style.height = height + 'px';
+
+      // サイズ情報表示
+      selectionInfo.style.left = (left + width + 10) + 'px';
+      selectionInfo.style.top = top + 'px';
+      selectionInfo.textContent = `${width} × ${height}`;
+    });
+
+    // マウスアップで選択完了
+    document.addEventListener('mouseup', async (e) => {
+      if (!isSelecting) return;
+      isSelecting = false;
+
+      const currentX = e.clientX;
+      const currentY = e.clientY;
+
+      const left = Math.min(startX, currentX);
+      const top = Math.min(startY, currentY);
+      const width = Math.abs(currentX - startX);
+      const height = Math.abs(currentY - startY);
+
+      // 最小サイズチェック
+      if (width < 10 || height < 10) {
+        selectionBox.style.display = 'none';
+        selectionInfo.style.display = 'none';
+        return;
+      }
+
+      // ローディング表示
+      showLoading('スクリーンショットを取得中...');
+
+      try {
+        // 選択ウィンドウを非表示にしてからキャプチャ
+        selectionBox.style.display = 'none';
+        selectionInfo.style.display = 'none';
+        document.querySelector('.overlay').style.background = 'transparent';
+        document.querySelector('.instructions').style.display = 'none';
+
+        // 少し待ってからキャプチャ（ウィンドウ非表示の反映を待つ）
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // DPIスケーリングを考慮
+        const dpr = window.devicePixelRatio || 1;
+        const region = {
+          x: Math.round(left * dpr),
+          y: Math.round(top * dpr),
+          width: Math.round(width * dpr),
+          height: Math.round(height * dpr)
+        };
+
+        showLoading('OCR処理中...');
+
+        // スクリーンショット処理を実行
+        const result = await window.electronAPI.processScreenshot(region);
+
+        showLoading('翻訳結果を表示中...');
+
+        // 結果ウィンドウを表示
+        await window.electronAPI.showResultWindow(result);
+
+        // 選択ウィンドウを閉じる
+        await window.electronAPI.closeSelectionWindow();
+
+      } catch (error) {
+        console.error('Error:', error);
+        hideLoading();
+
+        // エラーメッセージを表示
+        document.querySelector('.overlay').style.background = 'rgba(0, 0, 0, 0.3)';
+        document.querySelector('.instructions').style.display = 'block';
+        document.querySelector('.instructions').innerHTML =
+          `<span style="color: #f44336;">エラー: ${error.message || '処理に失敗しました'}</span><br>
+           <kbd>Esc</kbd> で閉じる`;
+      }
+    });
+
+    // ESCキーでキャンセル
+    document.addEventListener('keydown', async (e) => {
+      if (e.key === 'Escape') {
+        await window.electronAPI.closeSelectionWindow();
+      }
+    });
+
+    // ローディング表示
+    function showLoading(text) {
+      loadingText.textContent = text;
+      loadingOverlay.classList.add('active');
+    }
+
+    // ローディング非表示
+    function hideLoading() {
+      loadingOverlay.classList.remove('active');
+    }
+  </script>
+</body>
+</html>

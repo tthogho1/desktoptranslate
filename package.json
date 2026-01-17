@@ -1,0 +1,45 @@
+{
+  "name": "desktop-translate",
+  "version": "1.0.0",
+  "description": "範囲指定スクリーンショット翻訳表示アプリケーション",
+  "main": "main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "electron-store": "^8.1.0",
+    "jimp": "^0.22.12",
+    "screenshot-desktop": "^1.15.0",
+    "tesseract.js": "^5.1.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.desktoptranslate.app",
+    "productName": "ScreenshotTranslator",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    }
+  },
+  "author": "",
+  "license": "MIT"
+}
