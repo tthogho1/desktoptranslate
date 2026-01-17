@@ -315,7 +315,7 @@
       }
     }
 
-    /* ショートカットバッジ */
+    /* Shortcut badge */
     .shortcut-badge {
       display: inline-block;
       padding: 4px 8px;
@@ -324,6 +324,107 @@
       border-radius: 4px;
       font-size: 12px;
       font-family: monospace;
+    }
+
+    /* Recording styles */
+    .source-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .source-item {
+      background-color: var(--surface-color);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .source-item:hover {
+      border-color: var(--primary-color);
+    }
+
+    .source-item.selected {
+      border-color: var(--primary-color);
+      background-color: rgba(74, 144, 217, 0.1);
+    }
+
+    .source-item img {
+      width: 100%;
+      height: 100px;
+      object-fit: contain;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      background: var(--bg-color);
+    }
+
+    .source-item .source-name {
+      font-size: 12px;
+      color: var(--text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .recording-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .recording-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background-color: var(--surface-color);
+      border-radius: 6px;
+    }
+
+    .recording-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: var(--error-color);
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .recording-time {
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .btn-record {
+      background-color: var(--error-color);
+    }
+
+    .btn-record:hover {
+      background-color: #d32f2f;
+    }
+
+    .video-preview {
+      width: 100%;
+      max-height: 400px;
+      background: var(--bg-color);
+      border-radius: 8px;
+      margin-top: 16px;
     }
   </style>
 </head>
@@ -336,68 +437,95 @@
   </div>
 
   <nav class="tab-nav">
-    <button class="tab-btn active" data-tab="translate">翻訳</button>
-    <button class="tab-btn" data-tab="history">履歴</button>
-    <button class="tab-btn" data-tab="settings">設定</button>
+    <button class="tab-btn active" data-tab="translate">Translate</button>
+    <button class="tab-btn" data-tab="record">Record</button>
+    <button class="tab-btn" data-tab="history">History</button>
+    <button class="tab-btn" data-tab="settings">Settings</button>
   </nav>
 
   <main class="main-content">
-    <!-- 翻訳タブ -->
+    <!-- Translate Tab -->
     <div id="translate-tab" class="tab-content active">
       <div id="translation-result" style="display: none;">
         <div class="translation-card">
-          <h3>原文</h3>
+          <h3>Original</h3>
           <p id="original-text"></p>
         </div>
         <div class="translation-card">
-          <h3>翻訳</h3>
+          <h3>Translation</h3>
           <p id="translated-text"></p>
         </div>
         <div class="card-actions">
-          <button class="btn btn-primary" id="copy-btn">コピー</button>
+          <button class="btn btn-primary" id="copy-btn">Copy</button>
         </div>
       </div>
       <div id="empty-translate" class="empty-state">
         <div class="icon">🖼️</div>
-        <h3>翻訳を開始</h3>
-        <p><span class="shortcut-badge">Ctrl+Shift+T</span> を押して、翻訳したい範囲を選択してください</p>
+        <h3>Start Translation</h3>
+        <p>Press <span class="shortcut-badge">Ctrl+Shift+T</span> and select the area to translate</p>
       </div>
     </div>
 
-    <!-- 履歴タブ -->
+    <!-- Record Tab -->
+    <div id="record-tab" class="tab-content">
+      <h2 style="margin-bottom: 16px;">Screen Recording</h2>
+
+      <div class="recording-controls">
+        <button class="btn btn-primary" id="refresh-sources-btn">Refresh Sources</button>
+        <button class="btn btn-record" id="start-record-btn" disabled>Start Recording</button>
+        <button class="btn btn-secondary" id="stop-record-btn" style="display: none;">Stop Recording</button>
+        <div class="recording-status" id="recording-status" style="display: none;">
+          <div class="recording-indicator"></div>
+          <span class="recording-time" id="recording-time">00:00</span>
+        </div>
+      </div>
+
+      <h3 style="margin-bottom: 12px; color: var(--text-secondary);">Select a source to record:</h3>
+      <div id="source-grid" class="source-grid">
+        <div class="empty-state">
+          <div class="icon">🖥️</div>
+          <h3>No sources loaded</h3>
+          <p>Click "Refresh Sources" to load available screens and windows</p>
+        </div>
+      </div>
+
+      <video id="video-preview" class="video-preview" style="display: none;" controls></video>
+    </div>
+
+    <!-- History Tab -->
     <div id="history-tab" class="tab-content">
       <div class="history-header"
         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h2>翻訳履歴</h2>
-        <button class="btn btn-danger" id="clear-history-btn">履歴をクリア</button>
+        <h2>Translation History</h2>
+        <button class="btn btn-danger" id="clear-history-btn">Clear History</button>
       </div>
       <div id="history-list" class="history-list"></div>
       <div id="empty-history" class="empty-state" style="display: none;">
         <div class="icon">📝</div>
-        <h3>履歴がありません</h3>
-        <p>翻訳した内容がここに保存されます</p>
+        <h3>No history</h3>
+        <p>Your translated content will be saved here</p>
       </div>
     </div>
 
-    <!-- 設定タブ -->
+    <!-- Settings Tab -->
     <div id="settings-tab" class="tab-content">
       <div class="settings-section">
         <h3>🔑 DeepL API</h3>
         <div class="form-group">
-          <label for="api-key">APIキー</label>
-          <input type="password" id="api-key" placeholder="DeepL APIキーを入力">
-          <p class="hint">DeepL APIキーは <a href="https://www.deepl.com/pro-api" target="_blank"
-              style="color: var(--primary-color);">DeepL公式サイト</a> から取得できます</p>
+          <label for="api-key">API Key</label>
+          <input type="password" id="api-key" placeholder="Enter DeepL API Key">
+          <p class="hint">Get your DeepL API key from <a href="https://www.deepl.com/pro-api" target="_blank"
+              style="color: var(--primary-color);">DeepL official site</a></p>
         </div>
       </div>
 
       <div class="settings-section">
-        <h3>🌐 言語設定</h3>
+        <h3>🌐 Language Settings</h3>
         <div class="form-group">
-          <label for="source-lang">翻訳元言語</label>
+          <label for="source-lang">Source Language</label>
           <select id="source-lang">
             <option value="EN">English</option>
-            <option value="JA">日本語</option>
+            <option value="JA">Japanese</option>
             <option value="DE">Deutsch</option>
             <option value="FR">Français</option>
             <option value="ES">Español</option>
@@ -406,49 +534,49 @@
           </select>
         </div>
         <div class="form-group">
-          <label for="target-lang">翻訳先言語</label>
+          <label for="target-lang">Target Language</label>
           <select id="target-lang">
-            <option value="JA">日本語</option>
+            <option value="JA">Japanese</option>
             <option value="EN">English</option>
             <option value="DE">Deutsch</option>
             <option value="FR">Français</option>
             <option value="ES">Español</option>
-            <option value="ZH">中文</option>
-            <option value="KO">한국어</option>
+            <option value="ZH">Chinese</option>
+            <option value="KO">Korean</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="ocr-lang">OCR言語</label>
+          <label for="ocr-lang">OCR Language</label>
           <select id="ocr-lang">
-            <option value="jpn+eng">日本語 + English</option>
+            <option value="jpn+eng">Japanese + English</option>
             <option value="eng">English</option>
-            <option value="jpn">日本語</option>
-            <option value="chi_sim+eng">中文 + English</option>
-            <option value="kor+eng">한국어 + English</option>
+            <option value="jpn">Japanese</option>
+            <option value="chi_sim+eng">Chinese + English</option>
+            <option value="kor+eng">Korean + English</option>
           </select>
         </div>
       </div>
 
       <div class="settings-section">
-        <h3>⌨️ ホットキー</h3>
+        <h3>⌨️ Hotkey</h3>
         <div class="form-group">
-          <label for="hotkey">翻訳開始ショートカット</label>
+          <label for="hotkey">Translation Shortcut</label>
           <input type="text" id="hotkey" value="CommandOrControl+Shift+T" readonly>
-          <p class="hint">現在のバージョンではホットキーは固定です</p>
+          <p class="hint">Hotkey is fixed in the current version</p>
         </div>
       </div>
 
       <div class="settings-section">
-        <h3>💾 データ</h3>
+        <h3>💾 Data</h3>
         <div class="form-group">
           <label>
             <input type="checkbox" id="save-history" checked>
-            翻訳履歴を保存する
+            Save translation history
           </label>
         </div>
       </div>
 
-      <button class="btn btn-primary" id="save-settings-btn">設定を保存</button>
+      <button class="btn btn-primary" id="save-settings-btn">Save Settings</button>
     </div>
   </main>
 
@@ -466,14 +594,30 @@
     const clearHistoryBtn = document.getElementById('clear-history-btn');
     const saveSettingsBtn = document.getElementById('save-settings-btn');
 
-    // 設定入力要素
+    // Settings input elements
     const apiKeyInput = document.getElementById('api-key');
     const sourceLangSelect = document.getElementById('source-lang');
     const targetLangSelect = document.getElementById('target-lang');
     const ocrLangSelect = document.getElementById('ocr-lang');
     const saveHistoryCheckbox = document.getElementById('save-history');
 
-    // タブ切り替え
+    // Recording elements
+    const refreshSourcesBtn = document.getElementById('refresh-sources-btn');
+    const startRecordBtn = document.getElementById('start-record-btn');
+    const stopRecordBtn = document.getElementById('stop-record-btn');
+    const recordingStatus = document.getElementById('recording-status');
+    const recordingTime = document.getElementById('recording-time');
+    const sourceGrid = document.getElementById('source-grid');
+    const videoPreview = document.getElementById('video-preview');
+
+    // Recording state
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let selectedSourceId = null;
+    let recordingStartTime = null;
+    let recordingTimer = null;
+
+    // Tab switching
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const tabName = btn.dataset.tab;
@@ -487,34 +631,37 @@
         if (tabName === 'history') {
           loadHistory();
         }
+        if (tabName === 'record') {
+          loadScreenSources();
+        }
       });
     });
 
-    // 翻訳結果表示
+    // Show translation result
     function showTranslationResult(result) {
       originalText.textContent = result.originalText;
       translatedText.textContent = result.translatedText;
       translationResult.style.display = 'block';
       emptyTranslate.style.display = 'none';
 
-      // 翻訳タブに切り替え
+      // Switch to translate tab
       tabBtns.forEach(b => b.classList.remove('active'));
       tabContents.forEach(c => c.classList.remove('active'));
       document.querySelector('[data-tab="translate"]').classList.add('active');
       document.getElementById('translate-tab').classList.add('active');
     }
 
-    // コピー機能
+    // Copy function
     copyBtn.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(translatedText.textContent);
-        showNotification('コピーしました', 'success');
+        showNotification('Copied!', 'success');
       } catch (err) {
-        showNotification('コピーに失敗しました', 'error');
+        showNotification('Copy failed', 'error');
       }
     });
 
-    // 履歴読み込み
+    // Load history
     async function loadHistory() {
       const history = await window.electronAPI.getHistory();
 
@@ -534,16 +681,16 @@
       `).join('');
     }
 
-    // 履歴クリア
+    // Clear history
     clearHistoryBtn.addEventListener('click', async () => {
-      if (confirm('履歴をすべて削除しますか？')) {
+      if (confirm('Delete all history?')) {
         await window.electronAPI.clearHistory();
         loadHistory();
-        showNotification('履歴をクリアしました', 'success');
+        showNotification('History cleared', 'success');
       }
     });
 
-    // 設定読み込み
+    // Load settings
     async function loadSettings() {
       const config = await window.electronAPI.getConfig();
 
@@ -554,7 +701,7 @@
       saveHistoryCheckbox.checked = config.saveHistory !== false;
     }
 
-    // 設定保存
+    // Save settings
     saveSettingsBtn.addEventListener('click', async () => {
       await window.electronAPI.setConfig('deeplApiKey', apiKeyInput.value);
       await window.electronAPI.setConfig('sourceLang', sourceLangSelect.value);
@@ -562,10 +709,145 @@
       await window.electronAPI.setConfig('ocrLang', ocrLangSelect.value);
       await window.electronAPI.setConfig('saveHistory', saveHistoryCheckbox.checked);
 
-      showNotification('設定を保存しました', 'success');
+      showNotification('Settings saved', 'success');
     });
 
-    // 通知表示
+    // ========== Screen Recording Functions ==========
+
+    // Load screen sources
+    async function loadScreenSources() {
+      try {
+        const sources = await window.electronAPI.getScreenSources();
+
+        if (sources.length === 0) {
+          sourceGrid.innerHTML = `
+            <div class="empty-state">
+              <div class="icon">🖥️</div>
+              <h3>No sources available</h3>
+              <p>No screens or windows found</p>
+            </div>
+          `;
+          return;
+        }
+
+        sourceGrid.innerHTML = sources.map(source => `
+          <div class="source-item" data-source-id="${source.id}">
+            <img src="${source.thumbnailDataUrl}" alt="${source.name}">
+            <div class="source-name" title="${source.name}">${source.name}</div>
+          </div>
+        `).join('');
+
+        // Add click handlers
+        document.querySelectorAll('.source-item').forEach(item => {
+          item.addEventListener('click', () => {
+            document.querySelectorAll('.source-item').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+            selectedSourceId = item.dataset.sourceId;
+            startRecordBtn.disabled = false;
+          });
+        });
+
+      } catch (error) {
+        console.error('Error loading sources:', error);
+        showNotification('Failed to load screen sources', 'error');
+      }
+    }
+
+    // Refresh sources button
+    refreshSourcesBtn.addEventListener('click', loadScreenSources);
+
+    // Start recording
+    startRecordBtn.addEventListener('click', async () => {
+      if (!selectedSourceId) {
+        showNotification('Please select a source first', 'error');
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            mandatory: {
+              chromeMediaSource: 'desktop',
+              chromeMediaSourceId: selectedSourceId,
+            }
+          }
+        });
+
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType: 'video/webm; codecs=vp9'
+        });
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = async () => {
+          stream.getTracks().forEach(track => track.stop());
+
+          const blob = new Blob(recordedChunks, { type: 'video/webm' });
+          const arrayBuffer = await blob.arrayBuffer();
+
+          // Show preview
+          videoPreview.src = URL.createObjectURL(blob);
+          videoPreview.style.display = 'block';
+
+          // Save file
+          const savedPath = await window.electronAPI.saveRecording(arrayBuffer);
+          if (savedPath) {
+            showNotification(`Recording saved: ${savedPath}`, 'success');
+          }
+        };
+
+        mediaRecorder.start();
+        recordingStartTime = Date.now();
+        updateRecordingTime();
+        recordingTimer = setInterval(updateRecordingTime, 1000);
+
+        // Update UI
+        startRecordBtn.style.display = 'none';
+        stopRecordBtn.style.display = 'inline-block';
+        recordingStatus.style.display = 'flex';
+        refreshSourcesBtn.disabled = true;
+
+        showNotification('Recording started', 'success');
+
+      } catch (error) {
+        console.error('Error starting recording:', error);
+        showNotification('Failed to start recording: ' + error.message, 'error');
+      }
+    });
+
+    // Stop recording
+    stopRecordBtn.addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        clearInterval(recordingTimer);
+
+        // Update UI
+        startRecordBtn.style.display = 'inline-block';
+        stopRecordBtn.style.display = 'none';
+        recordingStatus.style.display = 'none';
+        refreshSourcesBtn.disabled = false;
+
+        showNotification('Recording stopped', 'success');
+      }
+    });
+
+    // Update recording time display
+    function updateRecordingTime() {
+      const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+      const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+      const seconds = (elapsed % 60).toString().padStart(2, '0');
+      recordingTime.textContent = `${minutes}:${seconds}`;
+    }
+
+    // ========== End Screen Recording Functions ==========
+
+    // Show notification
     function showNotification(message, type = 'success') {
       const notification = document.createElement('div');
       notification.className = `notification ${type}`;
@@ -577,14 +859,14 @@
       }, 3000);
     }
 
-    // HTMLエスケープ
+    // HTML escape
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
 
-    // IPC イベントリスナー
+    // IPC event listeners
     window.electronAPI.onShowTranslationResult((result) => {
       showTranslationResult(result);
     });
@@ -604,7 +886,7 @@
       loadHistory();
     });
 
-    // 初期化
+    // Initialization
     loadSettings();
   </script>
 </body>

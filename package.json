@@ -2,13 +2,15 @@
   "name": "desktop-translate",
   "version": "1.0.0",
   "description": "範囲指定スクリーンショット翻訳表示アプリケーション",
-  "main": "main/main.js",
+  "main": "dist/main/main.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --dev",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux"
+    "build:ts": "tsc",
+    "watch:ts": "tsc --watch",
+    "start": "npm run build:ts && electron .",
+    "dev": "npm run build:ts && electron . --dev",
+    "build:win": "npm run build:ts && electron-builder --win",
+    "build:mac": "npm run build:ts && electron-builder --mac",
+    "build:linux": "npm run build:ts && electron-builder --linux"
   },
   "dependencies": {
     "axios": "^1.6.0",
@@ -18,15 +20,25 @@
     "tesseract.js": "^5.1.0"
   },
   "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/screenshot-desktop": "^1.15.0",
     "electron": "^30.0.0",
-    "electron-builder": "^24.9.1"
+    "electron-builder": "^24.9.1",
+    "typescript": "^5.3.0"
   },
   "build": {
     "appId": "com.desktoptranslate.app",
     "productName": "ScreenshotTranslator",
     "directories": {
-      "output": "dist"
+      "output": "build"
     },
+    "files": [
+      "dist/**/*",
+      "renderer/**/*",
+      "eng.traineddata",
+      "jpn.traineddata",
+      "config.json"
+    ],
     "win": {
       "target": "nsis",
       "icon": "assets/icon.ico"

@@ -1,13 +1,17 @@
-const Tesseract = require('tesseract.js');
-const path = require('path');
+import Tesseract, { Worker } from 'tesseract.js';
 
-let worker = null;
+let worker: Worker | null = null;
+
+interface OcrLanguage {
+  code: string;
+  name: string;
+}
 
 /**
  * Tesseract Workerを初期化
- * @param {string} lang - 言語コード (例: 'jpn+eng')
+ * @param lang - 言語コード (例: 'jpn+eng')
  */
-async function initWorker(lang = 'jpn+eng') {
+export async function initWorker(lang: string = 'jpn+eng'): Promise<Worker> {
   if (worker) {
     await worker.terminate();
   }
@@ -25,11 +29,14 @@ async function initWorker(lang = 'jpn+eng') {
 
 /**
  * 画像からテキストを抽出
- * @param {Buffer|string} image - 画像バッファまたはパス
- * @param {string} lang - 言語コード (例: 'jpn+eng')
- * @returns {Promise<string>} - 抽出されたテキスト
+ * @param image - 画像バッファまたはパス
+ * @param lang - 言語コード (例: 'jpn+eng')
+ * @returns 抽出されたテキスト
  */
-async function extractText(image, lang = 'jpn+eng') {
+export async function extractText(
+  image: Buffer | string,
+  lang: string = 'jpn+eng'
+): Promise<string> {
   try {
     // Workerがない場合は初期化
     if (!worker) {
@@ -38,7 +45,7 @@ async function extractText(image, lang = 'jpn+eng') {
 
     console.log('Starting OCR processing...');
 
-    const { data } = await worker.recognize(image);
+    const { data } = await worker!.recognize(image);
     const extractedText = data.text.trim();
 
     console.log('OCR completed. Extracted text length:', extractedText.length);
@@ -55,10 +62,10 @@ async function extractText(image, lang = 'jpn+eng') {
 
 /**
  * 抽出されたテキストの後処理
- * @param {string} text - 生のテキスト
- * @returns {string} - 処理済みテキスト
+ * @param text - 生のテキスト
+ * @returns 処理済みテキスト
  */
-function postProcessText(text) {
+export function postProcessText(text: string): string {
   if (!text) return '';
 
   return (
@@ -77,11 +84,14 @@ function postProcessText(text) {
 
 /**
  * 特定の言語でOCRを実行（ワンショット）
- * @param {Buffer|string} image - 画像バッファまたはパス
- * @param {string} lang - 言語コード
- * @returns {Promise<string>} - 抽出されたテキスト
+ * @param image - 画像バッファまたはパス
+ * @param lang - 言語コード
+ * @returns 抽出されたテキスト
  */
-async function extractTextOneShot(image, lang = 'jpn+eng') {
+export async function extractTextOneShot(
+  image: Buffer | string,
+  lang: string = 'jpn+eng'
+): Promise<string> {
   try {
     const result = await Tesseract.recognize(image, lang, {
       logger: m => {
@@ -101,7 +111,7 @@ async function extractTextOneShot(image, lang = 'jpn+eng') {
 /**
  * Workerを終了
  */
-async function terminateWorker() {
+export async function terminateWorker(): Promise<void> {
   if (worker) {
     await worker.terminate();
     worker = null;
@@ -111,7 +121,7 @@ async function terminateWorker() {
 /**
  * サポートされている言語を取得
  */
-function getSupportedLanguages() {
+export function getSupportedLanguages(): OcrLanguage[] {
   return [
     { code: 'eng', name: 'English' },
     { code: 'jpn', name: '日本語' },
@@ -127,11 +137,4 @@ function getSupportedLanguages() {
   ];
 }
 
-module.exports = {
-  initWorker,
-  extractText,
-  extractTextOneShot,
-  terminateWorker,
-  getSupportedLanguages,
-  postProcessText,
-};
+export type { OcrLanguage };

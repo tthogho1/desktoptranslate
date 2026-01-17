@@ -1,110 +1,72 @@
 # Screenshot Translator
 
-範囲指定スクリーンショット翻訳表示アプリケーション
+# Screenshot Translator
 
-## 機能
+A cross-platform Electron desktop app for capturing, translating, and recording your screen.
 
-- **ホットキー起動**: `Ctrl+Shift+T` で翻訳モードを開始
-- **範囲選択**: マウスドラッグで翻訳したい領域を選択
-- **OCR**: Tesseract.js による高精度な文字認識（日本語・英語対応）
-- **翻訳**: DeepL API による高品質な翻訳
-- **履歴保存**: 翻訳履歴を自動保存
+## Features
 
-## 必要条件
+- **Hotkey**: Quickly start translation with a customizable shortcut (default: Ctrl+Shift+T).
+- **Screenshot OCR & Translation**: Select any region of your screen, extract text using OCR, and translate it using DeepL.
+- **History**: View and manage your translation history.
+- **Settings**: Configure DeepL API key, OCR language, translation languages, and more.
+- **Screen Recording**: Record your desktop or application windows as video files (WebM).
 
-- Node.js 18.x 以上
-- DeepL API キー（無料版でも可）
+## Requirements
 
-## インストール
+- Node.js (v16 or later recommended)
+- npm
+- DeepL API Key (required for translation)
 
-```bash
-# 依存関係のインストール
-npm install
+## Installation
 
-# 開発モードで起動
-npm start
-```
+1. Clone this repository:
+   ```sh
+   git clone <your-repo-url>
+   cd desktoptranslate
+   ```
+2. Install dependencies:
+   ```sh
+   npm install
+   ```
+3. Start the app:
+   ```sh
+   npm start
+   ```
 
-## 使い方
+## Usage
 
-1. アプリを起動すると、システムトレイにアイコンが表示されます
-2. `Ctrl+Shift+T` を押すと、画面全体に半透明のオーバーレイが表示されます
-3. マウスをドラッグして、翻訳したいテキスト領域を選択します
-4. 自動的にOCRと翻訳が実行され、結果がポップアップで表示されます
-5. 「コピー」ボタンで翻訳結果をクリップボードにコピーできます
-6. `Esc` キーで選択をキャンセルできます
+- **Translation**: Press `Ctrl+Shift+T` (or your configured hotkey), select a region, and view the translation in the main window.
+- **Screen Recording**: Go to the "Record" tab, select a screen/window, and use the Start/Stop buttons to record. Save the video as a WebM file.
+- **Settings**: Enter your DeepL API key and adjust language preferences in the "Settings" tab.
+- **History**: View or clear your translation history in the "History" tab.
 
-## 設定
+## Configuration
 
-### DeepL API キーの設定
+- **DeepL API Key**: Required for translation. Get your key from [DeepL Pro API](https://www.deepl.com/pro-api).
+- **OCR Language**: Choose the language(s) for text extraction (e.g., Japanese + English).
+- **Translation Languages**: Set source and target languages for translation.
+- **Save History**: Enable or disable saving translation history.
 
-1. [DeepL Pro API](https://www.deepl.com/pro-api) からAPIキーを取得
-2. アプリの「設定」タブでAPIキーを入力
-3. 「設定を保存」をクリック
+## File Structure
 
-### 対応言語
+- `src/main/` - Main process (Electron app logic, IPC, capture, OCR, translation, recording)
+- `src/renderer/` - Renderer process (UI logic, preload script)
+- `renderer/` - HTML and static assets
+- `assets/` - App icons and images
 
-**翻訳元/先言語**:
+## License
 
-- 日本語
-- 英語
-- ドイツ語
-- フランス語
-- スペイン語
-- 中国語
-- 韓国語
+MIT License
 
-**OCR言語**:
+---
 
-- 日本語 + 英語
-- 英語
-- 日本語
-- 中国語 + 英語
-- 韓国語 + 英語
-
-## ビルド
-
-```bash
-# Windows向けビルド
-npm run build:win
-
-# macOS向けビルド
-npm run build:mac
-
-# Linux向けビルド
-npm run build:linux
-```
-
-ビルド成果物は `dist/` フォルダに出力されます。
-
-## 技術スタック
-
-- **Electron**: クロスプラットフォームデスクトップアプリ
-- **Tesseract.js**: ブラウザ/Node.js用OCRエンジン
-- **DeepL API**: 高品質翻訳API
-- **Jimp**: 画像処理
-- **screenshot-desktop**: スクリーンキャプチャ
-- **electron-store**: 設定の永続化
-
-## アーキテクチャ
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Main Process  │◄──►│   Renderer       │    │   Preload       │
-│ (Hotkey/OCR)    │    │ (UI/Translation) │    │ (IPC Bridge)    │
-└─────────┬───────┘    └─────────┬────────┘    └─────────┬───────┘
-          │                      │                        │
-          ▼                      ▼                        ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│  Screen Capture │    │  Translation UI  │    │  Secure Context │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-          │                      │
-          ▼                      ▼
-┌─────────────────┐    ┌──────────────────┐
-│   Tesseract OCR │    │   DeepL API      │
-└─────────────────┘    └──────────────────┘
-```
+**Note:** This project is not affiliated with DeepL. You must provide your own DeepL API key for translation functionality.
 
 ## ライセンス
 
 MIT
+
+```
+
+```
