@@ -1,17 +1,39 @@
-const axios = require('axios');
+import axios from 'axios';
 
 const DEEPL_API_FREE_URL = 'https://api-free.deepl.com/v2/translate';
 const DEEPL_API_PRO_URL = 'https://api.deepl.com/v2/translate';
 
+interface TranslationResponse {
+  translations: {
+    text: string;
+    detected_source_language?: string;
+  }[];
+}
+
+interface Language {
+  language: string;
+  name: string;
+}
+
+interface UsageInfo {
+  character_count: number;
+  character_limit: number;
+}
+
 /**
  * DeepL APIを使用してテキストを翻訳
- * @param {string} text - 翻訳するテキスト
- * @param {string} targetLang - 翻訳先言語コード
- * @param {string} sourceLang - 翻訳元言語コード (省略可能)
- * @param {string} apiKey - DeepL APIキー
- * @returns {Promise<string>} - 翻訳されたテキスト
+ * @param text - 翻訳するテキスト
+ * @param targetLang - 翻訳先言語コード
+ * @param sourceLang - 翻訳元言語コード (省略可能)
+ * @param apiKey - DeepL APIキー
+ * @returns 翻訳されたテキスト
  */
-async function translate(text, targetLang = 'JA', sourceLang = null, apiKey) {
+export async function translate(
+  text: string,
+  targetLang: string = 'JA',
+  sourceLang: string | null = null,
+  apiKey: string
+): Promise<string> {
   if (!text || text.trim() === '') {
     throw new Error('翻訳するテキストが空です');
   }
@@ -35,7 +57,7 @@ async function translate(text, targetLang = 'JA', sourceLang = null, apiKey) {
 
     console.log(`Translating to ${targetLang}...`);
 
-    const response = await axios.post(apiUrl, params, {
+    const response = await axios.post<TranslationResponse>(apiUrl, params, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -50,7 +72,7 @@ async function translate(text, targetLang = 'JA', sourceLang = null, apiKey) {
       throw new Error('翻訳結果が取得できませんでした');
     }
   } catch (error) {
-    if (error.response) {
+    if (axios.isAxiosError(error) && error.response) {
       const status = error.response.status;
       switch (status) {
         case 403:
@@ -65,7 +87,7 @@ async function translate(text, targetLang = 'JA', sourceLang = null, apiKey) {
           throw new Error('DeepLサービスが一時的に利用できません');
         default:
           throw new Error(
-            `翻訳エラー (${status}): ${error.response.data?.message || '不明なエラー'}`
+            `翻訳エラー (${status}): ${(error.response.data as { message?: string })?.message || '不明なエラー'}`
           );
       }
     }
@@ -75,10 +97,10 @@ async function translate(text, targetLang = 'JA', sourceLang = null, apiKey) {
 
 /**
  * サポートされている言語一覧を取得
- * @param {string} apiKey - DeepL APIキー
- * @returns {Promise<Array>} - 言語リスト
+ * @param apiKey - DeepL APIキー
+ * @returns 言語リスト
  */
-async function getSupportedLanguages(apiKey) {
+export async function getSupportedLanguages(apiKey: string): Promise<Language[]> {
   if (!apiKey) {
     // APIキーがない場合はデフォルトの言語リストを返す
     return getDefaultLanguages();
@@ -89,7 +111,7 @@ async function getSupportedLanguages(apiKey) {
     : 'https://api.deepl.com/v2/languages';
 
   try {
-    const response = await axios.get(apiUrl, {
+    const response = await axios.get<Language[]>(apiUrl, {
       params: { auth_key: apiKey },
     });
     return response.data;
@@ -102,7 +124,7 @@ async function getSupportedLanguages(apiKey) {
 /**
  * デフォルトの言語リストを返す
  */
-function getDefaultLanguages() {
+export function getDefaultLanguages(): Language[] {
   return [
     { language: 'JA', name: '日本語' },
     { language: 'EN', name: 'English' },
@@ -124,10 +146,10 @@ function getDefaultLanguages() {
 
 /**
  * API使用量を取得
- * @param {string} apiKey - DeepL APIキー
- * @returns {Promise<Object>} - 使用量情報
+ * @param apiKey - DeepL APIキー
+ * @returns 使用量情報
  */
-async function getUsage(apiKey) {
+export async function getUsage(apiKey: string): Promise<UsageInfo> {
   if (!apiKey) {
     throw new Error('APIキーが設定されていません');
   }
@@ -137,7 +159,7 @@ async function getUsage(apiKey) {
     : 'https://api.deepl.com/v2/usage';
 
   try {
-    const response = await axios.get(apiUrl, {
+    const response = await axios.get<UsageInfo>(apiUrl, {
       params: { auth_key: apiKey },
     });
     return response.data;
@@ -147,9 +169,4 @@ async function getUsage(apiKey) {
   }
 }
 
-module.exports = {
-  translate,
-  getSupportedLanguages,
-  getDefaultLanguages,
-  getUsage,
-};
+export type { TranslationResponse, Language, UsageInfo };
