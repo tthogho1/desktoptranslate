@@ -26,6 +26,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   closeSelectionWindow: () => ipcRenderer.invoke('close-selection-window'),
   showResultWindow: result => ipcRenderer.invoke('show-result-window', result),
 
+  // 録画関連
+  getScreenSources: () => ipcRenderer.invoke('get-screen-sources'),
+  saveRecording: buffer => ipcRenderer.invoke('save-recording', buffer),
+
   // イベントリスナー
   onShowTranslationResult: callback => {
     ipcRenderer.on('show-translation-result', (event, result) => callback(result));
